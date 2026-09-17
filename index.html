@@ -146,7 +146,10 @@ h2.pt{font-size:18px;font-weight:800;margin:4px 0 2px}
     <button class="btn" style="background:var(--warning)" onclick="document.getElementById('impFile').click()">导入数据 (Excel)</button>
     <input type="file" id="impFile" multiple accept=".xlsx,.xls,.csv" style="display:none">
   </div>
-  <div class="note">数据来源：<b id="dataSrc">内置快照（2026-09-01~09-16，21 家门店）</b> · 点“导入数据 (Excel)”可上传新的美团经营明细（支持一次选多个文件，分页导出的各页一起选即可）；按“分店名”合并，同名门店以新导入为准；数据保存在本机浏览器，刷新不丢。<a onclick="resetData()">恢复内置数据</a>。“vs 上期 / 环比 / 走势”为演示口径。</div>
+  <div class="note" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <button class="btn" style="background:var(--warning);font-size:14px;padding:8px 20px" onclick="document.getElementById('impFile').click()">📂 导入源数据 (Excel)</button>
+    <span style="flex:1;min-width:240px;font-size:12px;color:var(--sub)">数据来源：<b id="dataSrc">内置快照（2026-09-01~09-16，21 家门店）</b> · 支持一次选多个文件（分页导出的各页一起选即可）；按“分店名”合并，同名门店以新导入为准；数据保存在本机浏览器，刷新不丢。<a onclick="resetData()">恢复内置数据</a>。“vs 上期 / 环比 / 走势”为演示口径。</span>
+  </div>
   <div id="view"></div>
 </div>
 <div class="toast" id="toast"></div>
