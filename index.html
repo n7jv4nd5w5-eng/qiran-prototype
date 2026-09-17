@@ -148,7 +148,7 @@ h2.pt{font-size:18px;font-weight:800;margin:4px 0 2px}
   </div>
   <div class="note" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
     <button class="btn" style="background:var(--warning);font-size:14px;padding:8px 20px" onclick="document.getElementById('impFile').click()">📂 导入源数据 (Excel)</button>
-    <span style="flex:1;min-width:240px;font-size:12px;color:var(--sub)">数据来源：<b id="dataSrc">内置快照（2026-09-01~09-16，21 家门店）</b> · 支持一次选多个文件（分页导出的各页一起选即可）；按“分店名”合并，同名门店以新导入为准；数据保存在本机浏览器，刷新不丢。<a onclick="resetData()">恢复内置数据</a>。“vs 上期 / 环比 / 走势”为演示口径。</span>
+    <span style="flex:1;min-width:240px;font-size:12px;color:var(--sub)">数据来源：<b id="dataSrc">内置快照（2026-09-01~09-16，21 家门店）</b> · 各板块（sheet）与多个文件一起选即可：自动读取每个文件的全部工作表，按“分店名”逐字段合并，空单元格不覆盖已有值；数据保存在本机浏览器，刷新不丢。<a onclick="resetData()">恢复内置数据</a>。“vs 上期 / 环比 / 走势”为演示口径。</span>
   </div>
   <div id="view"></div>
 </div>
@@ -200,16 +200,17 @@ function persistData(){
 }
 function importFiles(files){
   if(!files||!files.length)return;
-  const list=[...files];const merged=[];const errs=[];const seen={};
+  const list=[...files];const merged=[];const errs=[];
   (function next(i){
     if(i>=list.length)return finish();
     const f=list[i];const fr=new FileReader();
     fr.onload=e=>{
       try{
         const wb=XLSX.read(e.target.result,{type:'array'});
-        const ws=wb.Sheets['明细数据']||wb.Sheets[wb.SheetNames[0]];
-        const rows=XLSX.utils.sheet_to_json(ws,{defval:null});
-        rows.forEach(r=>{if(r[C.store]!=null&&r[C.store]!=='')merged.push(r)});
+        wb.SheetNames.forEach(sn=>{
+          const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{defval:null});
+          rows.forEach(r=>{if(r[C.store]!=null&&r[C.store]!=='')merged.push(r)});
+        });
       }catch(err){errs.push(f.name)}
       next(i+1);
     };
@@ -218,12 +219,14 @@ function importFiles(files){
   })(0);
   function finish(){
     if(!merged.length){toast('未解析到有效数据行'+(errs.length?'；失败文件：'+errs.join('、'):''));return}
-    merged.forEach(r=>seen[r[C.store]]=r);
     let updated=0,added=0;
     const idx={};DATA.forEach((r,i)=>idx[r[C.store]]=i);
-    Object.values(seen).forEach(r=>{
-      if(idx[r[C.store]]!=null){DATA[idx[r[C.store]]]=r;updated++}
-      else{DATA.push(r);added++}
+    merged.forEach(r=>{
+      const name=r[C.store];
+      let target;
+      if(idx[name]!=null){target=DATA[idx[name]];updated++}
+      else{target={};DATA.push(target);idx[name]=DATA.length-1;added++}
+      Object.keys(r).forEach(k=>{if(r[k]!==null&&r[k]!=='')target[k]=r[k]});
     });
     persistData();
     $('dataSrc').textContent='本机导入数据 · '+DATA.length+' 家门店';
